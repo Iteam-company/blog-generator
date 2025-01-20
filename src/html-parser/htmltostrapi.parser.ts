@@ -4,10 +4,9 @@ import type {
   StrapiBlock,
   StrapiTextNode,
   StrapiLinkNode,
-  StrapiContentNode,
   StrapiImage,
   StrapiListItemNode,
-} from "./interfaces/strapi.json.interface";
+} from "../blog/interfaces/strapi.json.interface";
 
 export class HtmlToStrapiConverter {
   private dom: JSDOM;
@@ -174,8 +173,10 @@ export class HtmlToStrapiConverter {
     };
   }
 
-  private processTextContent(element: Element): StrapiContentNode[] {
-    const nodes: StrapiContentNode[] = [];
+  private processTextContent(
+    element: Element
+  ): Array<StrapiTextNode | StrapiLinkNode> {
+    const nodes: Array<StrapiTextNode | StrapiLinkNode> = [];
 
     const processNode = (node: Node) => {
       if (node.nodeType === node.TEXT_NODE && node.textContent?.trim()) {

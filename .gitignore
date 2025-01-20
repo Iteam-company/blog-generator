@@ -62,3 +62,6 @@ public/uploads/
 public/*.min.js
 public/*.min.css
 public/assets/generated/
+
+# Text files
+src/text-files/

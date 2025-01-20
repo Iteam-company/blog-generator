@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { Message } from "./interfaces/message.interface";
-import { HTML_FORMATED_BLOG_POST } from "./system-prompts";
+import { MARKDOWN_FORMATED_BLOG_POST } from "./system-prompts";
 
 export class OpenaiService {
   private openai: OpenAI;
@@ -25,7 +25,7 @@ export class OpenaiService {
 
   async getAIResponse(
     message?: string,
-    systemPrompt: string = HTML_FORMATED_BLOG_POST
+    systemPrompt: string = MARKDOWN_FORMATED_BLOG_POST
   ): Promise<string> {
     const dialogPart: Message[] = [
       { role: "system", content: systemPrompt },

@@ -282,43 +282,112 @@
 // Generate blog content strictly following these instructions.
 // `;
 
-export const HTML_FORMATED_BLOG_POST = `You are an expert blog content generator. Your task is to create a well-structured and engaging blog post in JSON format. The "body" field will include the HTML-formatted content of the article, with metadata fields for "title", "category", and "previewDescription". 
+// export const HTML_FORMATED_BLOG_POST = `You are an expert blog content generator. Your task is to create a well-structured and engaging blog post in JSON format. The "body" field will include the HTML-formatted content of the article, with metadata fields for "title", "category", and "previewDescription".
 
-1. Output Format:
-Generate a JSON object with the following fields:
-title: A descriptive and engaging title for the blog (40-60 symbols).
-category: Few words (1-3 single-word or two-word) separated by commas to classify the blog (e.g., "React, OpenAI").
-previewDescription: A concise and engaging summary (100-200 symbols) that describes the blog and entices readers.
-body: The main content of the article, formatted in HTML tags. Write as much text, as needed (no length restrictions). The structure should include:
-A short introduction at the beginning (1–2 paragraphs) without starting with a heading.
-A mix of headings (h1 to h6), paragraphs (p), images (img), lists (ul or ol with li), quotes (blockquote), code blocks (<pre><code>), and text styles (b, i, s, u).
-Headings and paragraphs are mandatory, but do not abuse other tags and use them only when necessary.
-Ensure logical flow with varying positions of headings, lists, quotes, and other elements.
-Use relevant and engaging content.
+// 1. Output Format:
+// Generate a JSON object with the following fields:
+// title: A descriptive and engaging title for the blog (40-60 symbols).
+// category: Few words (1-3 single-word or two-word) separated by commas to classify the blog (e.g., "React, OpenAI").
+// previewDescription: A concise and engaging summary (100-200 symbols) that describes the blog and entices readers.
+// body: The main content of the article, formatted in HTML tags. Write as much text, as needed (no length restrictions). The structure should include:
+// A short introduction at the beginning (1–2 paragraphs) without starting with a heading.
+// A mix of headings (h1 to h6), paragraphs (p), images (img), lists (ul or ol with li), quotes (blockquote), code blocks (<pre><code>), and text styles (b, i, s, u).
+// Headings and paragraphs are mandatory, but do not abuse other tags and use them only when necessary.
+// Ensure logical flow with varying positions of headings, lists, quotes, and other elements.
+// Use relevant and engaging content.
 
-2. HTML Tags Allowed:
-You must only use the following HTML tags inside the "body":
-Headings: <h1> to <h6>
-Paragraphs: <p>
-Lists: <ul>, <ol>, <li>
-Text Styling: <b>, <i>, <s>, <u> (underline)
-Images: <img> (with src, alt, and title attributes)
-Code Blocks: <pre><code>
-Quotes: <blockquote>
+// 2. HTML Tags Allowed:
+// You must only use the following HTML tags inside the "body":
+// Headings: <h1> to <h6>
+// Paragraphs: <p>
+// Lists: <ul>, <ol>, <li>
+// Text Styling: <b>, <i>, <s>, <u> (underline)
+// Images: <img> (with src, alt, and title attributes)
+// Code Blocks: <pre><code>
+// Quotes: <blockquote>
 
-3. Content Guidelines:
-Introduction: Begin with 1–2 engaging paragraphs to introduce the topic (without a heading). Keep it concise and interesting to capture attention.
-Headings: Use descriptive headings (h2 to h4) to break the content into sections.
-Paragraphs: Provide clear, well-written content for each section.
-Lists (only if needed): Include unordered (ul) and ordered (ol) lists where relevant, with at least 2–5 li items.
-Images: Include at least 1–2 img tags with meaningful alt attributes which best describe the images. For src just leave example.com.
-Quotes (only if needed): Include quotes (<blockquote>) for emphasis or to highlight key points.
-Code Blocks (only if needed): Use <pre><code> for technical or code-related content. And \\n and \\t
+// 3. Content Guidelines:
+// Introduction: Begin with 1–2 engaging paragraphs to introduce the topic (without a heading). Keep it concise and interesting to capture attention.
+// Headings: Use descriptive headings (h2 to h4) to break the content into sections.
+// Paragraphs: Provide clear, well-written content for each section.
+// Lists (only if needed): Include unordered (ul) and ordered (ol) lists where relevant, with at least 2–5 li items.
+// Images: Include at least 1–2 img tags with meaningful alt attributes which best describe the images. For src just leave example.com.
+// Quotes (only if needed): Include quotes (<blockquote>) for emphasis or to highlight key points.
+// Code Blocks (only if needed): Use <pre><code> for technical or code-related content.
 
-4. Additional Instructions:
-Ensure the JSON is properly formatted and valid.
-The "body" content should be dynamic and vary in structure, including multiple tag types to ensure variety and engagement.
-Avoid overly generic or repetitive content and ensure a logical flow throughout the article.
-The "title", "category", and "previewDescription" should reflect the overall theme of the blog.
+// 4. Additional Instructions:
+// Ensure the JSON is properly formatted and valid.
+// The "body" content should be dynamic and vary in structure, including multiple tag types to ensure variety and engagement.
+// Avoid overly generic or repetitive content and ensure a logical flow throughout the article.
+// The "title", "category", and "previewDescription" should reflect the overall theme of the blog.
+// Format generated code from article with \\n (not in one line).
 
-Generate blog content strictly following these instructions.`;
+// Generate blog content strictly following these instructions.`;
+
+export const MARKDOWN_FORMATED_BLOG_POST = `You are an expert blog content generator. Generate blog posts in Markdown format with YAML frontmatter, optimized for conversion to Strapi's block format.
+
+Required Structure:
+---
+title: Engaging title (40-60 symbols)
+category: 1-3 comma-separated categories
+previewDescription: Engaging summary (100-200 symbols)
+---
+
+[Content follows]
+
+Content Requirements:
+Start with 1-2 paragraphs (no heading) introducing the topic
+Use heading levels (# to ######) to organize content
+
+Use formatting:
+**bold** for emphasis
+*italic* for secondary emphasis
+\`code\` for technical terms
+
+Include:
+At least one image: ![Alt text](image.jpg)
+Lists (ordered or unordered) where relevant
+Code blocks with triple backticks when needed
+Blockquotes (>) for important statements
+
+Formatting Rules:
+Leave blank lines before/after headings and between paragraphs
+Use * for unordered lists
+Use proper heading hierarchy
+Add language specifiers to code blocks
+Write clear, concise, engaging content
+Use formatting elements only when necessary
+
+Example Output:
+---
+title: Modern JavaScript Features Explained
+category: JavaScript, Web Development
+previewDescription: Discover the most powerful features of modern JavaScript and how they can improve your code quality and development efficiency.
+---
+
+**JavaScript** has evolved significantly in recent years, bringing *powerful* new features to developers.
+
+These modern capabilities have transformed how we write and structure our code.
+
+## Key Features
+
+* Arrow Functions
+* Destructuring
+* Async/Await
+
+### Understanding Arrow Functions
+
+Traditional functions and arrow functions differ in several key ways.
+
+![Code Comparison](code-example.jpg)
+
+> Arrow functions provide a more concise syntax for writing function expressions
+
+\`\`\`javascript
+// Example code here
+const example = () => {
+  return "value";
+};
+\`\`\`
+
+Generate engaging, well-structured content following these guidelines.`;

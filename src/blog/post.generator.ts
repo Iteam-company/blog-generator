@@ -1,14 +1,10 @@
 import { Readable } from "stream";
 import { basename } from "path";
 
-import { writeFile } from "fs";
-import { promisify } from "util";
-import { randomBytes } from "crypto";
-
 import axios from "axios";
 import FormData from "form-data";
 
-import { HtmlToStrapiConverter } from "../html-parser/htmltostrapi.parser";
+import { MarkdownToStrapiConverter } from "../markdown-parser/markdowntostrapi.parser";
 import { OpenaiService } from "../openai/openai.service";
 import {
   StrapiArticleRequest,
@@ -16,55 +12,13 @@ import {
   StrapiBlock,
   StrapiImage,
   StrapiImageBlock,
-  StrapiImageFormat,
   StrapiImageFormats,
-} from "../html-parser/interfaces/strapi.json.interface";
-
-const writeFileAsync = promisify(writeFile);
-
-const saveJsonToFile = async (
-  fileName: string,
-  data: object,
-  flag: string = "w"
-) => {
-  try {
-    const jsonData = JSON.stringify(data, null, 2); // Beautify JSON with 2-space indentation
-    const filePath = `./${fileName}`;
-    await writeFileAsync(filePath, jsonData, { encoding: "utf-8", flag: flag });
-    console.log(`File saved successfully at ${filePath}`);
-  } catch (error) {
-    console.error("Error writing JSON file:", error);
-  }
-};
-
-interface UnsplashImage {
-  id?: string;
-  urls: {
-    regular: string;
-    small: string;
-  };
-  alt_description: string | null;
-  description: string | null;
-}
-
-interface PromptedJSONResponce {
-  title: string;
-  category: string;
-  previewDescription: string;
-  body: string;
-}
-
-function randomString(length: number) {
-  if (length % 2 !== 0) {
-    length++;
-  }
-
-  return randomBytes(length / 2).toString("hex");
-}
-
-interface UnsplashSearchResponse {
-  results: UnsplashImage[];
-}
+} from "./interfaces/strapi.json.interface";
+import { randomString, saveJsonToFile } from "../utils/utils";
+import {
+  UnsplashImage,
+  UnsplashSearchResponse,
+} from "./interfaces/unsplash.interface";
 
 export class PostGenerator {
   private openai: OpenaiService;
@@ -93,39 +47,22 @@ export class PostGenerator {
   async generateNewPost(prompt: string): Promise<StrapiArticleResponce> {
     let userPrompt = prompt;
     if (!userPrompt) {
-      userPrompt = "Generate an article about React with TypeScript.";
+      userPrompt =
+        "Generate an article based on 1-3 of these categories: Frontend, It, Angular, React, Asap, Framer Motion, Vercel, SSR, Landing, SPA, SAAS, PWA, React Native, Mobile development, Microservices. Give some code examples.";
     }
 
     const aiResponse = await this.openai.getAIResponse(userPrompt);
 
-    let parsedReponse: PromptedJSONResponce;
-    try {
-      parsedReponse = JSON.parse(aiResponse);
-    } catch {
-      const cleanedAiResponse = aiResponse.replace(
-        /^```json\n|^```\n|```$/g,
-        ""
-      );
-      parsedReponse = JSON.parse(cleanedAiResponse);
-    }
+    await saveJsonToFile("airesponse.md", aiResponse);
 
-    // await saveJsonToFile("airesponse.json", parsedReponse);
+    const converter = new MarkdownToStrapiConverter(aiResponse);
+    const article = converter.convert();
 
-    const { title, category, previewDescription, body } = parsedReponse;
-
-    const converter = new HtmlToStrapiConverter(body);
-    const article = converter.createArticle(body, {
-      title,
-      category,
-      previewDescription,
-      previewImage: 34,
-    });
-
-    // await saveJsonToFile("article.json", article);
+    await saveJsonToFile("article.json", article);
 
     const processedPost = await this.processImagesInBlogPost(article);
 
-    // await saveJsonToFile("processed.json", processedPost);
+    await saveJsonToFile("processed.json", processedPost);
 
     const publishedPost = await this.publishThePost(processedPost);
     return publishedPost.data;

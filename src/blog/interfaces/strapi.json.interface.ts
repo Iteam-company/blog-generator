@@ -52,28 +52,26 @@ export interface StrapiLinkNode {
   children: StrapiTextNode[];
 }
 
-export type StrapiContentNode = StrapiTextNode | StrapiLinkNode;
-
 export interface StrapiListItemNode {
   type: "list-item";
-  children: StrapiContentNode[];
+  children: Array<StrapiTextNode | StrapiLinkNode>;
 }
 
 export interface StrapiHeadingBlock {
   type: "heading";
   level: number;
-  children: StrapiContentNode[];
+  children: Array<StrapiTextNode | StrapiLinkNode>;
 }
 
 export interface StrapiImageBlock {
   type: "image";
   image: StrapiImage;
-  children: StrapiContentNode[];
+  children: StrapiTextNode[];
 }
 
 export interface StrapiParagraphBlock {
   type: "paragraph";
-  children: StrapiContentNode[];
+  children: Array<StrapiTextNode | StrapiLinkNode>;
 }
 
 export interface StrapiListBlock {
@@ -84,12 +82,12 @@ export interface StrapiListBlock {
 
 export interface StrapiCodeBlock {
   type: "code";
-  children: StrapiContentNode[];
+  children: StrapiTextNode[];
 }
 
 export interface StrapiQuoteBlock {
   type: "quote";
-  children: StrapiContentNode[];
+  children: Array<StrapiTextNode | StrapiLinkNode>;
 }
 
 export type StrapiBlock =
@@ -99,6 +97,12 @@ export type StrapiBlock =
   | StrapiListBlock
   | StrapiCodeBlock
   | StrapiQuoteBlock;
+
+export interface MarkdownMetadata {
+  title: string;
+  category: string;
+  previewDescription: string;
+}
 
 export interface StrapiArticleData {
   title: string;
