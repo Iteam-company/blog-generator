@@ -4,6 +4,8 @@ import asyncHandler from "../utils/error.handler";
 import { PostGenerator } from "../../blog/post.generator";
 import { readFileContent, saveJsonToFile } from "../../utils/utils";
 import { MarkdownToStrapiConverter } from "../../markdown-parser/markdowntostrapi.parser";
+import axios from "axios";
+import { getStrapiData } from "../../openai/prompts/user-prompts";
 
 export class BlogsController {
   getMarkDown = asyncHandler(
@@ -55,6 +57,19 @@ export class BlogsController {
       if (!metadata || !content) {
         next(new AppError("Please, provide a markdown", 400));
       }
+
+      await axios.put(
+        "https://itm-strapi.onrender.com/api/article-generation",
+        {
+          data: {
+            exisitigTitles: [
+              ...((await getStrapiData()).attributes.exisitigTitles || []),
+              { name: metadata.title },
+            ],
+          },
+        },
+        { headers: { Authorization: `Bearer ${process.env.STRAPI_TOKEN}` } }
+      );
 
       await saveJsonToFile("formated.md", content);
 

@@ -20,7 +20,11 @@ import {
   UnsplashImage,
   UnsplashSearchResponse,
 } from "./interfaces/unsplash.interface";
-import { IT_ARTICLE_DEFAULT } from "../openai/prompts/user-prompts";
+import {
+  getPrompt,
+  getStrapiData,
+  IT_ARTICLE_DEFAULT,
+} from "../openai/prompts/user-prompts";
 
 export class PostGenerator {
   private openai: OpenaiService;
@@ -50,9 +54,8 @@ export class PostGenerator {
     });
   }
 
-  async generateNewPost(
-    prompt: string = IT_ARTICLE_DEFAULT
-  ): Promise<StrapiArticleResponce> {
+  async generateNewPost(prompt: string): Promise<StrapiArticleResponce> {
+    prompt = prompt || (await getPrompt());
     const aiResponse = await this.openai.getAIResponse(prompt);
 
     return await this.parseAndPublish(aiResponse);
@@ -77,7 +80,14 @@ export class PostGenerator {
     return publishedPost.data;
   }
 
-  async generateMarkDown(prompt: string = IT_ARTICLE_DEFAULT): Promise<string> {
+  async generateMarkDown(prompt: string): Promise<string> {
+    prompt = prompt || (await getPrompt());
+    prompt += ` Here is existing titles, do not use this for new posts: ${
+      (await getStrapiData()).attributes.exisitigTitles
+        .map((elem: any, i: number) => elem.name)
+        .join(", ") || ""
+    }`;
+
     const markdown = await this.openai.getAIResponse(prompt);
 
     await saveJsonToFile("airesponse.md", markdown);
