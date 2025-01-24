@@ -54,7 +54,7 @@ export class PostGenerator {
     });
   }
 
-  async generateNewPost(prompt: string): Promise<StrapiArticleResponce> {
+  async generateNewPost(prompt?: string): Promise<StrapiArticleResponce> {
     prompt = prompt || (await getPrompt());
     const aiResponse = await this.openai.getAIResponse(prompt);
 

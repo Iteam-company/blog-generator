@@ -11,20 +11,15 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-const whitelist = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:3000",
-  "http://127.0.0.1:5173",
-  "http://192.168.1.42:3000",
-  "https://3cf2-195-234-70-138.ngrok-free.app",
-  "https://c026-91-202-131-31.ngrok-free.app",
-];
-
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || whitelist.indexOf(origin) !== -1) {
+      if (
+        !origin ||
+        process.env.CORS_WHITELIST?.split(",")
+          .map((elem) => elem.trim())
+          .indexOf(origin) !== -1
+      ) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
