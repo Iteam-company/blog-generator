@@ -2,6 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import AppError from "../utils/app.error";
 
 export class ErrorHandler {
+  private handleJWTError(): AppError {
+    return new AppError("Invalid token. Please log in again!", 401);
+  }
+
+  private handleJWTExpiredError(): AppError {
+    return new AppError("Your token has expired! Please log in again.", 401);
+  }
+
   private sendErrorDev(err: AppError, req: Request, res: Response): void {
     res.status(err.statusCode).json({
       status: err.status,
@@ -43,6 +51,10 @@ export class ErrorHandler {
     } else if (process.env.NODE_ENV === "production") {
       let error = JSON.parse(JSON.stringify(err));
       error.message = err.message;
+
+      if (error.name === "JsonWebTokenError") error = this.handleJWTError();
+      if (error.name === "TokenExpiredError")
+        error = this.handleJWTExpiredError();
 
       this.sendErrorProd(error, req, res);
     }

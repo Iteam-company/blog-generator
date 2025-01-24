@@ -1,12 +1,13 @@
 import { Readable } from "stream";
 import { basename } from "path";
 
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 import FormData from "form-data";
 
 import { MarkdownToStrapiConverter } from "../markdown-parser/markdowntostrapi.parser";
 import { OpenaiService } from "../openai/openai.service";
 import {
+  MarkdownMetadata,
   StrapiArticleRequest,
   StrapiArticleResponce,
   StrapiBlock,
@@ -19,43 +20,51 @@ import {
   UnsplashImage,
   UnsplashSearchResponse,
 } from "./interfaces/unsplash.interface";
+import { IT_ARTICLE_DEFAULT } from "../openai/prompts/user-prompts";
 
 export class PostGenerator {
   private openai: OpenaiService;
   private STRAPI_BLOG_URL = "/api/blogs";
   private STRAPI_MEDIA_URL = "/api/upload";
   private UNSPLASH_SEARCH_URL = "/search/photos";
+  private STRAPI_TOKEN: string;
+  private strapiAxios: AxiosInstance;
+  private unsplashAxios: AxiosInstance;
 
-  private strapiAxios = axios.create({
-    baseURL: process.env.STRAPI_URL,
-    headers: {
-      Authorization: `Bearer ${process.env.STRAPI_TOKEN}`,
-    },
-  });
-
-  private unsplashAxios = axios.create({
-    baseURL: process.env.UNSPLASH_URL,
-    headers: {
-      Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
-    },
-  });
-
-  constructor() {
+  constructor(strapiToken?: string) {
     this.openai = new OpenaiService();
+    this.STRAPI_TOKEN = strapiToken
+      ? strapiToken
+      : (process.env.STRAPI_TOKEN as string);
+    this.strapiAxios = axios.create({
+      baseURL: process.env.STRAPI_URL,
+      headers: {
+        Authorization: `Bearer ${this.STRAPI_TOKEN}`,
+      },
+    });
+    this.unsplashAxios = axios.create({
+      baseURL: process.env.UNSPLASH_URL,
+      headers: {
+        Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
+      },
+    });
   }
 
-  async generateNewPost(prompt: string): Promise<StrapiArticleResponce> {
-    let userPrompt = prompt;
-    if (!userPrompt) {
-      userPrompt =
-        "Generate an article based on 1-3 of these categories: Frontend, It, Angular, React, Asap, Framer Motion, Vercel, SSR, Landing, SPA, SAAS, PWA, React Native, Mobile development, Microservices. Give some code examples.";
-    }
+  async generateNewPost(
+    prompt: string = IT_ARTICLE_DEFAULT
+  ): Promise<StrapiArticleResponce> {
+    const aiResponse = await this.openai.getAIResponse(prompt);
 
-    const aiResponse = await this.openai.getAIResponse(userPrompt);
+    return await this.parseAndPublish(aiResponse);
+  }
 
-    await saveJsonToFile("airesponse.md", aiResponse);
+  async parseAndPublish(
+    markdownArticle: string,
+    meta?: MarkdownMetadata
+  ): Promise<StrapiArticleResponce> {
+    await saveJsonToFile("airesponse.md", markdownArticle);
 
-    const converter = new MarkdownToStrapiConverter(aiResponse);
+    const converter = new MarkdownToStrapiConverter(markdownArticle, meta);
     const article = converter.convert();
 
     await saveJsonToFile("article.json", article);
@@ -66,6 +75,14 @@ export class PostGenerator {
 
     const publishedPost = await this.publishThePost(processedPost);
     return publishedPost.data;
+  }
+
+  async generateMarkDown(prompt: string = IT_ARTICLE_DEFAULT): Promise<string> {
+    const markdown = await this.openai.getAIResponse(prompt);
+
+    await saveJsonToFile("airesponse.md", markdown);
+
+    return markdown;
   }
 
   async publishThePost(content: StrapiArticleRequest) {
@@ -93,8 +110,8 @@ export class PostGenerator {
 
   async uploadImageToStrapi(
     imageUrl: string,
-    altText: string,
-    fileName?: string
+    fileName?: string,
+    altText?: string
   ): Promise<StrapiImage> {
     try {
       const imageResponse = await axios.get(imageUrl, {
@@ -113,7 +130,10 @@ export class PostGenerator {
       });
 
       if (altText) {
-        formData.append("alternativeText", altText);
+        formData.append(
+          "fileInfo",
+          JSON.stringify({ alternativeText: altText })
+        );
       }
 
       const uploadResponse = await this.strapiAxios.post<StrapiImage[]>(
@@ -149,8 +169,8 @@ export class PostGenerator {
         if (previewImage) {
           const uploadedImage = await this.uploadImageToStrapi(
             previewImage.urls.regular,
-            previewImage.alt_description || processedPost.data.title,
-            previewImage.id
+            previewImage.id,
+            previewImage.alt_description || processedPost.data.title
           );
           processedPost.data.previewImage = uploadedImage.id;
         }
@@ -167,8 +187,8 @@ export class PostGenerator {
           if (unsplashImage) {
             const uploadedImage = await this.uploadImageToStrapi(
               unsplashImage.urls.regular,
-              unsplashImage.alt_description || searchQuery,
-              unsplashImage.id
+              unsplashImage.id,
+              unsplashImage.alt_description || searchQuery
             );
             imageBlock.image = uploadedImage;
           }

@@ -324,6 +324,74 @@
 
 // Generate blog content strictly following these instructions.`;
 
+// export const MARKDOWN_FORMATED_BLOG_POST = `You are an expert blog content generator. Generate blog posts in Markdown format with YAML frontmatter, optimized for conversion to Strapi's block format.
+
+// Required Structure:
+// ---
+// title: Engaging title (40-60 symbols)
+// category: 1-3 comma-separated categories
+// previewDescription: Engaging summary (100-200 symbols)
+// ---
+
+// [Content follows]
+
+// Content Requirements:
+// Start with 1-2 paragraphs (no heading) introducing the topic
+// Use heading levels (# to ######) to organize content
+
+// Use formatting:
+// **bold** for emphasis
+// *italic* for secondary emphasis
+// \`code\` for technical terms
+
+// Include:
+// At least one image: ![Alt text](image.jpg)
+// Lists (ordered or unordered) where relevant
+// Code blocks with triple backticks when needed
+// Blockquotes (>) for important statements
+
+// Formatting Rules:
+// Leave blank lines before/after headings and between paragraphs
+// Use * for unordered lists
+// Use proper heading hierarchy
+// Add language specifiers to code blocks
+// Write clear, concise, engaging content
+// Use formatting elements only when necessary
+
+// Example Output:
+// ---
+// title: Modern JavaScript Features Explained
+// category: JavaScript, Web Development
+// previewDescription: Discover the most powerful features of modern JavaScript and how they can improve your code quality and development efficiency.
+// ---
+
+// **JavaScript** has evolved significantly in recent years, bringing *powerful* new features to developers.
+
+// These modern capabilities have transformed how we write and structure our code.
+
+// ## Key Features
+
+// * Arrow Functions
+// * Destructuring
+// * Async/Await
+
+// ### Understanding Arrow Functions
+
+// Traditional functions and arrow functions differ in several key ways.
+
+// ![Code Comparison](code-example.jpg)
+
+// > Arrow functions provide a more concise syntax for writing function expressions
+
+// \`\`\`javascript
+// // Example code here
+// const example = () => {
+//   return "value";
+// };
+// \`\`\`
+
+// Generate engaging, well-structured content following these guidelines.`;
+
 export const MARKDOWN_FORMATED_BLOG_POST = `You are an expert blog content generator. Generate blog posts in Markdown format with YAML frontmatter, optimized for conversion to Strapi's block format.
 
 Required Structure:
@@ -345,7 +413,6 @@ Use formatting:
 \`code\` for technical terms
 
 Include:
-At least one image: ![Alt text](image.jpg)
 Lists (ordered or unordered) where relevant
 Code blocks with triple backticks when needed
 Blockquotes (>) for important statements
@@ -378,8 +445,6 @@ These modern capabilities have transformed how we write and structure our code.
 ### Understanding Arrow Functions
 
 Traditional functions and arrow functions differ in several key ways.
-
-![Code Comparison](code-example.jpg)
 
 > Arrow functions provide a more concise syntax for writing function expressions
 
