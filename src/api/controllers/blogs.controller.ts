@@ -5,9 +5,13 @@ import { PostGenerator } from "../../blog/post.generator";
 import { readFileContent, saveJsonToFile } from "../../utils/utils";
 import { MarkdownToStrapiConverter } from "../../markdown-parser/markdowntostrapi.parser";
 import axios from "axios";
-import { getStrapiData } from "../../openai/prompts/user-prompts";
 
 export class BlogsController {
+  private STRAPI_ARTICLE_META_URL = "/api/article-generation";
+  private strapiAxios = axios.create({
+    baseURL: process.env.STRAPI_URL,
+  });
+
   getMarkDown = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const postGenerator = new PostGenerator(req.cookies?.jwt);
@@ -58,18 +62,13 @@ export class BlogsController {
         next(new AppError("Please, provide a markdown", 400));
       }
 
-      await axios.put(
-        "https://itm-strapi.onrender.com/api/article-generation",
-        {
-          data: {
-            exisitigTitles: [
-              ...((await getStrapiData()).attributes.exisitigTitles || []),
-              { name: metadata.title },
-            ],
-          },
+      const articlesMeta = await postGenerator.getStrapiData();
+      const exisitigTitles = articlesMeta.attributes.exisitigTitles || [];
+      await this.strapiAxios.put(this.STRAPI_ARTICLE_META_URL, {
+        data: {
+          exisitigTitles: [...exisitigTitles, { name: metadata.title }],
         },
-        { headers: { Authorization: `Bearer ${process.env.STRAPI_TOKEN}` } }
-      );
+      });
 
       await saveJsonToFile("formated.md", content);
 

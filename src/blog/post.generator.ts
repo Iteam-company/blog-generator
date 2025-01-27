@@ -20,16 +20,13 @@ import {
   UnsplashImage,
   UnsplashSearchResponse,
 } from "./interfaces/unsplash.interface";
-import {
-  getPrompt,
-  getStrapiData,
-  IT_ARTICLE_DEFAULT,
-} from "../openai/prompts/user-prompts";
+import { IT_ARTICLE_DEFAULT } from "../openai/prompts/user-prompts";
 
 export class PostGenerator {
   private openai: OpenaiService;
   private STRAPI_BLOG_URL = "/api/blogs";
   private STRAPI_MEDIA_URL = "/api/upload";
+  private STRAPI_ARTICLE_META_URL = "/api/article-generation";
   private UNSPLASH_SEARCH_URL = "/search/photos";
   private STRAPI_TOKEN: string;
   private strapiAxios: AxiosInstance;
@@ -55,8 +52,14 @@ export class PostGenerator {
   }
 
   async generateNewPost(prompt?: string): Promise<StrapiArticleResponce> {
-    prompt = prompt || (await getPrompt());
-    const aiResponse = await this.openai.getAIResponse(prompt);
+    let userPrompt: string;
+    if (prompt) {
+      userPrompt = prompt;
+    } else {
+      userPrompt = await this.getPrompt();
+    }
+
+    const aiResponse = await this.openai.getAIResponse(userPrompt);
 
     return await this.parseAndPublish(aiResponse);
   }
@@ -80,15 +83,23 @@ export class PostGenerator {
     return publishedPost.data;
   }
 
-  async generateMarkDown(prompt: string): Promise<string> {
-    prompt = prompt || (await getPrompt());
-    prompt += ` Here is existing titles, do not use this for new posts: ${
-      (await getStrapiData()).attributes.exisitigTitles
-        .map((elem: any, i: number) => elem.name)
-        .join(", ") || ""
-    }`;
+  async generateMarkDown(prompt?: string): Promise<string> {
+    let userPrompt: string;
+    if (prompt) {
+      userPrompt = prompt;
+    } else {
+      userPrompt = await this.getPrompt();
+    }
 
-    const markdown = await this.openai.getAIResponse(prompt);
+    const strapiMeta = await this.getStrapiData();
+    const referenceCategories =
+      strapiMeta.attributes.exisitigTitles
+        .map((elem: any) => elem.name)
+        .join(", ") || "";
+
+    userPrompt += ` Here is existing titles, do not use this for new posts: ${referenceCategories}`;
+
+    const markdown = await this.openai.getAIResponse(userPrompt);
 
     await saveJsonToFile("airesponse.md", markdown);
 
@@ -253,5 +264,19 @@ export class PostGenerator {
     }
 
     return processedImage;
+  }
+
+  async getPrompt() {
+    const strapiMeta = await this.getStrapiData();
+    const referenceCategories = strapiMeta.attributes.referenceCategory
+      .map((elem: any) => elem.name)
+      .join(", ");
+    return IT_ARTICLE_DEFAULT.replace("---categories---", referenceCategories);
+  }
+
+  async getStrapiData() {
+    return await this.strapiAxios
+      .get(this.STRAPI_ARTICLE_META_URL + "?populate=deep")
+      .then((res) => res.data.data);
   }
 }

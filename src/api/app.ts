@@ -11,15 +11,14 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
+const corsWhitelist = process.env
+  .CORS_WHITELIST!.split(",")
+  .map((elem) => elem.trim());
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (
-        !origin ||
-        process.env.CORS_WHITELIST?.split(",")
-          .map((elem) => elem.trim())
-          .indexOf(origin) !== -1
-      ) {
+      if (!origin || corsWhitelist.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -38,6 +37,7 @@ app.use(
 
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+
 app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
