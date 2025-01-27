@@ -4,14 +4,8 @@ import asyncHandler from "../utils/error.handler";
 import { PostGenerator } from "../../blog/post.generator";
 import { readFileContent, saveJsonToFile } from "../../utils/utils";
 import { MarkdownToStrapiConverter } from "../../markdown-parser/markdowntostrapi.parser";
-import axios from "axios";
 
 export class BlogsController {
-  private STRAPI_ARTICLE_META_URL = "/api/article-generation";
-  private strapiAxios = axios.create({
-    baseURL: process.env.STRAPI_URL,
-  });
-
   getMarkDown = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const postGenerator = new PostGenerator(req.cookies?.jwt);
@@ -61,14 +55,6 @@ export class BlogsController {
       if (!metadata || !content) {
         next(new AppError("Please, provide a markdown", 400));
       }
-
-      const articlesMeta = await postGenerator.getStrapiData();
-      const exisitigTitles = articlesMeta.attributes.exisitigTitles || [];
-      await this.strapiAxios.put(this.STRAPI_ARTICLE_META_URL, {
-        data: {
-          exisitigTitles: [...exisitigTitles, { name: metadata.title }],
-        },
-      });
 
       await saveJsonToFile("formated.md", content);
 

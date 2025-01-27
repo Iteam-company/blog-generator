@@ -3,11 +3,12 @@ import express from "express";
 import AppError from "./utils/app.error";
 import { errorHandler } from "./middlewares/error.middleware";
 
-import blogsRouter from "./routes/blogs.route";
-import authRouter from "./routes/auth.router";
-
 import cors from "cors";
 import cookieParser from "cookie-parser";
+
+import blogsRouter from "./routes/blogs.route";
+import authRouter from "./routes/auth.router";
+import cronRouter from "./routes/cron.router";
 
 const app = express();
 
@@ -25,7 +26,7 @@ app.use(
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -42,6 +43,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
 app.use("/api/blog", blogsRouter);
+app.use("/api/cron", cronRouter);
 
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

@@ -52,14 +52,7 @@ export class PostGenerator {
   }
 
   async generateNewPost(prompt?: string): Promise<StrapiArticleResponce> {
-    let userPrompt: string;
-    if (prompt) {
-      userPrompt = prompt;
-    } else {
-      userPrompt = await this.getPrompt();
-    }
-
-    const aiResponse = await this.openai.getAIResponse(userPrompt);
+    const aiResponse = await this.generateMarkDown(prompt);
 
     return await this.parseAndPublish(aiResponse);
   }
@@ -71,9 +64,18 @@ export class PostGenerator {
     await saveJsonToFile("airesponse.md", markdownArticle);
 
     const converter = new MarkdownToStrapiConverter(markdownArticle, meta);
+    const { metadata, content } = converter.getData();
     const article = converter.convert();
 
     await saveJsonToFile("article.json", article);
+
+    const articlesMeta = await this.getStrapiData();
+    const exisitigTitles = articlesMeta.attributes.exisitigTitles || [];
+    await this.strapiAxios.put(this.STRAPI_ARTICLE_META_URL, {
+      data: {
+        exisitigTitles: [...exisitigTitles, { name: metadata.title }],
+      },
+    });
 
     const processedPost = await this.processImagesInBlogPost(article);
 
@@ -97,7 +99,7 @@ export class PostGenerator {
         .map((elem: any) => elem.name)
         .join(", ") || "";
 
-    userPrompt += ` Here is existing titles, do not use this for new posts: ${referenceCategories}`;
+    userPrompt += ` Here is existing titles, avoid this topics in the next post: ${referenceCategories}`;
 
     const markdown = await this.openai.getAIResponse(userPrompt);
 
