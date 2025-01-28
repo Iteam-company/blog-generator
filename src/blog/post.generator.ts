@@ -88,7 +88,7 @@ export class PostGenerator {
   async generateMarkDown(prompt?: string): Promise<string> {
     let userPrompt: string;
     if (prompt) {
-      userPrompt = prompt;
+      userPrompt = prompt + "-- is a topic on which you need to generate post. ";
     } else {
       userPrompt = await this.getPrompt();
     }
@@ -99,7 +99,8 @@ export class PostGenerator {
         .map((elem: any) => elem.name)
         .join(", ") || "";
 
-    userPrompt += ` Here is existing titles, avoid this topics in the next post: ${referenceCategories}`;
+    userPrompt += `Here is existing titles, avoid this topics in the next post: ${referenceCategories}`;
+    console.log(userPrompt);
 
     const markdown = await this.openai.getAIResponse(userPrompt);
 
