@@ -7,6 +7,7 @@ import {
   StrapiLinkNode,
   StrapiTextNode,
 } from "../blog/interfaces/strapi.json.interface";
+import { AxiosInstance } from "axios";
 
 export class MarkdownToStrapiConverter {
   private tokens: Token[] = [];
@@ -49,7 +50,10 @@ export class MarkdownToStrapiConverter {
     };
   }
 
-  public convert(): StrapiArticleRequest {
+  public async convert(
+    images: { name: string; data: string }[],
+    strapiAxios: AxiosInstance
+  ): Promise<StrapiArticleRequest> {
     if (!this.metadata) {
       throw new Error("No metadata found");
     }
@@ -59,7 +63,7 @@ export class MarkdownToStrapiConverter {
         title: this.metadata.title,
         category: this.metadata.category,
         previewDescription: this.metadata.previewDescription,
-        Article: this.processTokens(this.tokens),
+        Article: await this.processTokens(this.tokens, images, strapiAxios),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         publishedAt: new Date().toISOString(),
@@ -67,11 +71,15 @@ export class MarkdownToStrapiConverter {
     };
   }
 
-  private processTokens(tokens: Token[]): StrapiBlock[] {
+  private async processTokens(
+    tokens: Token[],
+    images: { name: string; data: string }[],
+    strapiAxios: AxiosInstance
+  ): Promise<StrapiBlock[]> {
     const blocks: StrapiBlock[] = [];
 
     for (const token of tokens) {
-      const block = this.processToken(token);
+      const block = await this.processToken(token, images, strapiAxios);
       if (block) {
         blocks.push(block);
       }
@@ -80,7 +88,11 @@ export class MarkdownToStrapiConverter {
     return blocks;
   }
 
-  private processToken(token: Token): StrapiBlock | null {
+  private async processToken(
+    token: Token,
+    images: { name: string; data: string }[],
+    strapiAxios: AxiosInstance
+  ): Promise<StrapiBlock | null> {
     switch (token.type) {
       case "heading":
         return {
@@ -91,26 +103,17 @@ export class MarkdownToStrapiConverter {
 
       case "paragraph": {
         // Check if the paragraph contains only an image
-        const imageMatch = token.text.match(/^!\[(.*?)\]\((.*?)\)$/);
+        const imageMatch = token.text.match(/!\[(.*?)\]\((.*?)\)/);
         if (imageMatch) {
           const [, alt, url] = imageMatch;
+
           return {
             type: "image",
-            image: {
-              ext: this.getImageExtension(url),
-              url: url,
-              hash: this.generateHash(),
-              mime: this.getMimeType(url),
-              name: this.getImageName(url),
-              size: 0,
-              width: 0,
-              height: 0,
-              formats: {},
-              provider: "local",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              alternativeText: alt || null,
-            },
+            image: await this.uploadBase64ToStrapi(
+              images?.find((v) => v.name === alt)?.data ?? "",
+              alt,
+              strapiAxios
+            ),
             children: [{ type: "text", text: "" }],
           };
         }
@@ -282,4 +285,49 @@ export class MarkdownToStrapiConverter {
     const parts = url.split("/");
     return parts[parts.length - 1] || "image";
   }
+
+  uploadBase64ToStrapi = async (
+    base64Data: string,
+    name?: string,
+    strapiAxios?: AxiosInstance
+  ): Promise<any> => {
+    try {
+      const blob = base64ToBlob(base64Data);
+      const formData = new FormData();
+
+      formData.append("files", blob, `${name || crypto.randomUUID()}.jpg`);
+
+      if (!strapiAxios) return;
+      const res = await strapiAxios.post("/api/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return res.data[0];
+    } catch (err) {
+      console.error("Strapi upload error:", err);
+      throw err;
+    }
+  };
 }
+
+const base64ToBlob = (base64: string): Blob => {
+  const [meta, data] = base64.split(",");
+  const mimeMatch = meta.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const byteCharacters = atob(data);
+  const byteArrays = [];
+
+  for (let i = 0; i < byteCharacters.length; i += 512) {
+    const slice = byteCharacters.slice(i, i + 512);
+    const byteNumbers = new Array(slice.length);
+    for (let j = 0; j < slice.length; j++) {
+      byteNumbers[j] = slice.charCodeAt(j);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+
+  return new Blob(byteArrays, { type: mime });
+};

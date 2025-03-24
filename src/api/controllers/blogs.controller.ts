@@ -51,14 +51,17 @@ export class BlogsController {
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const postGenerator = new PostGenerator(req.cookies?.jwt);
 
-      const { metadata, content } = req.body;
+      const { metadata, content, images } = req.body;
       if (!metadata || !content) {
         next(new AppError("Please, provide a markdown", 400));
       }
 
       await saveJsonToFile("formated.md", content);
-
-      const newPost = await postGenerator.parseAndPublish(content, metadata);
+      const newPost = await postGenerator.parseAndPublish(
+        content,
+        images,
+        metadata
+      );
 
       res.status(201).json({ id: newPost.data.id });
     }

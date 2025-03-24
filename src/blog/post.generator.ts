@@ -59,13 +59,14 @@ export class PostGenerator {
 
   async parseAndPublish(
     markdownArticle: string,
+    images: { name: string; data: string }[] = [],
     meta?: MarkdownMetadata
   ): Promise<StrapiArticleResponce> {
     await saveJsonToFile("airesponse.md", markdownArticle);
 
     const converter = new MarkdownToStrapiConverter(markdownArticle, meta);
     const { metadata, content } = converter.getData();
-    const article = converter.convert();
+    const article = await converter.convert(images, this.strapiAxios);
 
     await saveJsonToFile("article.json", article);
 
@@ -88,7 +89,8 @@ export class PostGenerator {
   async generateMarkDown(prompt?: string): Promise<string> {
     let userPrompt: string;
     if (prompt) {
-      userPrompt = prompt + "-- is a topic on which you need to generate post. ";
+      userPrompt =
+        prompt + "-- is a topic on which you need to generate post. ";
     } else {
       userPrompt = await this.getPrompt();
     }
@@ -201,29 +203,29 @@ export class PostGenerator {
       }
 
       // Process images in the article content
-      const processBlock = async (block: StrapiBlock) => {
-        if (block.type === "image") {
-          const imageBlock = block as StrapiImageBlock;
-          const searchQuery =
-            imageBlock.image?.alternativeText || processedPost.data.title;
+      // const processBlock = async (block: StrapiBlock) => {
+      //   if (block.type === 'image') {
+      //     const imageBlock = block as StrapiImageBlock;
+      //     const searchQuery =
+      //       imageBlock.image?.alternativeText || processedPost.data.title;
 
-          const unsplashImage = await this.searchUnsplash(searchQuery);
-          if (unsplashImage) {
-            const uploadedImage = await this.uploadImageToStrapi(
-              unsplashImage.urls.regular,
-              unsplashImage.id,
-              unsplashImage.alt_description || searchQuery
-            );
-            imageBlock.image = uploadedImage;
-          }
-        }
-        return block;
-      };
+      //     const unsplashImage = await this.searchUnsplash(searchQuery);
+      //     if (unsplashImage) {
+      //       const uploadedImage = await this.uploadImageToStrapi(
+      //         unsplashImage.urls.regular,
+      //         unsplashImage.id,
+      //         unsplashImage.alt_description || searchQuery
+      //       );
+      //       imageBlock.image = uploadedImage;
+      //     }
+      //   }
+      //   return block;
+      // };
 
-      // Process all blocks
-      processedPost.data.Article = await Promise.all(
-        processedPost.data.Article.map(processBlock)
-      );
+      // // Process all blocks
+      // processedPost.data.Article = await Promise.all(
+      //   processedPost.data.Article.map(processBlock)
+      // );
 
       return processedPost;
     } catch (error) {
