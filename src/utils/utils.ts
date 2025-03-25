@@ -1,6 +1,7 @@
 import { writeFile, existsSync, mkdirSync, readFile } from "fs";
 import { promisify } from "util";
 import { randomBytes } from "crypto";
+import sharp from "sharp";
 
 const writeFileAsync = promisify(writeFile);
 const readTextFile = promisify(readFile);
@@ -44,3 +45,13 @@ export function randomString(length: number) {
   }
   return randomBytes(length / 2).toString("hex");
 }
+
+export const rasterizeSvg = async (
+  svgBuffer: Buffer,
+  width?: number
+): Promise<Buffer> => {
+  return sharp(svgBuffer)
+    .resize({ width: width || 1024 })
+    .png()
+    .toBuffer();
+};

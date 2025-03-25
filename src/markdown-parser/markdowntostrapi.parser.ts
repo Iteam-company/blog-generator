@@ -8,6 +8,7 @@ import {
   StrapiTextNode,
 } from "../blog/interfaces/strapi.json.interface";
 import { AxiosInstance } from "axios";
+import { rasterizeSvg } from "../utils/utils";
 
 export class MarkdownToStrapiConverter {
   private tokens: Token[] = [];
@@ -104,18 +105,22 @@ export class MarkdownToStrapiConverter {
       case "paragraph": {
         // Check if the paragraph contains only an image
         const imageMatch = token.text.match(/!\[(.*?)\]\((.*?)\)/);
-        if (imageMatch) {
-          const [, alt, url] = imageMatch;
-
-          return {
-            type: "image",
-            image: await this.uploadBase64OrUrlToStrapi(
+        try {
+          if (imageMatch) {
+            const [, alt, url] = imageMatch;
+            const res = await this.uploadBase64OrUrlToStrapi(
               images?.find((v) => v.name === alt)?.data ?? "",
               alt,
               strapiAxios
-            ),
-            children: [{ type: "text", text: "" }],
-          };
+            );
+            return {
+              type: "image",
+              image: res,
+              children: [{ type: "text", text: "" }],
+            };
+          }
+        } catch (err) {
+          console.log(err);
         }
         return {
           type: "paragraph",
@@ -259,33 +264,6 @@ export class MarkdownToStrapiConverter {
     return nodes;
   }
 
-  private generateHash(): string {
-    return Math.random().toString(36).substring(2, 15);
-  }
-
-  private getImageExtension(url: string): string {
-    const match = url.match(/\.([^.]+)$/);
-    return match ? `.${match[1].toLowerCase()}` : ".jpg";
-  }
-
-  private getMimeType(url: string): string {
-    const ext = this.getImageExtension(url);
-    const mimeTypes: Record<string, string> = {
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-      ".gif": "image/gif",
-      ".webp": "image/webp",
-      ".svg": "image/svg+xml",
-    };
-    return mimeTypes[ext] || "image/jpeg";
-  }
-
-  private getImageName(url: string): string {
-    const parts = url.split("/");
-    return parts[parts.length - 1] || "image";
-  }
-
   uploadBase64OrUrlToStrapi = async (
     data: string,
     name?: string,
@@ -295,22 +273,44 @@ export class MarkdownToStrapiConverter {
       const formData = new FormData();
       let fileBlob: Blob;
       let fileName = name || crypto.randomUUID();
+      let extension = "jpg";
+      let mime = "image/jpeg";
 
       if (data.startsWith("data:")) {
-        fileBlob = base64ToBlob(data);
-        formData.append("files", fileBlob, `${fileName}.jpg`);
+        const { blob, mime: detectedMime } = base64ToBlob(data);
+        mime = detectedMime;
+        extension = mime.split("/")[1]?.split("+")[0] || "jpg";
+
+        if (mime === "image/svg+xml") {
+          const svgBuffer = Buffer.from(await blob.arrayBuffer());
+          const pngBuffer = await rasterizeSvg(svgBuffer);
+          fileBlob = new Blob([pngBuffer], { type: "image/png" });
+          extension = "png";
+        } else {
+          fileBlob = blob;
+        }
+        formData.append("files", fileBlob, `${fileName}.${extension}`);
       } else if (data.startsWith("http")) {
         const response = await fetch(data);
         if (!response.ok) throw new Error("Failed to fetch image from URL");
 
         const contentType =
           response.headers.get("content-type") || "image/jpeg";
-        const arrayBuffer = await response.arrayBuffer();
-        fileBlob = new Blob([arrayBuffer], { type: contentType });
+        mime = contentType;
+        extension = contentType.split("/")[1]?.split("+")[0] || "jpg";
 
-        const extension = contentType.split("/")[1]?.split("+")[0] || "jpg";
-        const fileFromUrl = `${fileName}.${extension}`;
-        formData.append("files", fileBlob, fileFromUrl);
+        const arrayBuffer = await response.arrayBuffer();
+
+        if (mime === "image/svg+xml") {
+          const svgBuffer = Buffer.from(arrayBuffer);
+          const pngBuffer = await rasterizeSvg(svgBuffer);
+          fileBlob = new Blob([pngBuffer], { type: "image/png" });
+          extension = "png";
+        } else {
+          fileBlob = new Blob([arrayBuffer], { type: mime });
+        }
+
+        formData.append("files", fileBlob, `${fileName}.${extension}`);
       } else {
         throw new Error("Invalid image format. Must be base64 or valid URL.");
       }
@@ -331,7 +331,7 @@ export class MarkdownToStrapiConverter {
   };
 }
 
-const base64ToBlob = (base64: string): Blob => {
+const base64ToBlob = (base64: string): { blob: Blob; mime: string } => {
   if (!base64.includes(",")) {
     throw new Error("Invalid base64 string: missing comma separator");
   }
@@ -352,7 +352,7 @@ const base64ToBlob = (base64: string): Blob => {
     throw new Error("Base64 decode failed: invalid characters in string");
   }
 
-  const byteArrays = [];
+  const byteArrays: Uint8Array[] = [];
   for (let i = 0; i < byteCharacters.length; i += 512) {
     const slice = byteCharacters.slice(i, i + 512);
     const byteNumbers = new Array(slice.length);
@@ -363,5 +363,6 @@ const base64ToBlob = (base64: string): Blob => {
     byteArrays.push(byteArray);
   }
 
-  return new Blob(byteArrays, { type: mime });
+  const blob = new Blob(byteArrays, { type: mime });
+  return { blob, mime };
 };
