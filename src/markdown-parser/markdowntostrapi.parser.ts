@@ -109,7 +109,7 @@ export class MarkdownToStrapiConverter {
 
           return {
             type: "image",
-            image: await this.uploadBase64ToStrapi(
+            image: await this.uploadBase64OrUrlToStrapi(
               images?.find((v) => v.name === alt)?.data ?? "",
               alt,
               strapiAxios
@@ -286,18 +286,37 @@ export class MarkdownToStrapiConverter {
     return parts[parts.length - 1] || "image";
   }
 
-  uploadBase64ToStrapi = async (
-    base64Data: string,
+  uploadBase64OrUrlToStrapi = async (
+    data: string,
     name?: string,
     strapiAxios?: AxiosInstance
   ): Promise<any> => {
     try {
-      const blob = base64ToBlob(base64Data);
       const formData = new FormData();
+      let fileBlob: Blob;
+      let fileName = name || crypto.randomUUID();
 
-      formData.append("files", blob, `${name || crypto.randomUUID()}.jpg`);
+      if (data.startsWith("data:")) {
+        fileBlob = base64ToBlob(data);
+        formData.append("files", fileBlob, `${fileName}.jpg`);
+      } else if (data.startsWith("http")) {
+        const response = await fetch(data);
+        if (!response.ok) throw new Error("Failed to fetch image from URL");
 
-      if (!strapiAxios) return;
+        const contentType =
+          response.headers.get("content-type") || "image/jpeg";
+        const arrayBuffer = await response.arrayBuffer();
+        fileBlob = new Blob([arrayBuffer], { type: contentType });
+
+        const extension = contentType.split("/")[1]?.split("+")[0] || "jpg";
+        const fileFromUrl = `${fileName}.${extension}`;
+        formData.append("files", fileBlob, fileFromUrl);
+      } else {
+        throw new Error("Invalid image format. Must be base64 or valid URL.");
+      }
+
+      if (!strapiAxios) throw new Error("Missing Axios instance");
+
       const res = await strapiAxios.post("/api/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -313,12 +332,27 @@ export class MarkdownToStrapiConverter {
 }
 
 const base64ToBlob = (base64: string): Blob => {
-  const [meta, data] = base64.split(",");
-  const mimeMatch = meta.match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-  const byteCharacters = atob(data);
-  const byteArrays = [];
+  if (!base64.includes(",")) {
+    throw new Error("Invalid base64 string: missing comma separator");
+  }
 
+  const [meta, data] = base64.split(",");
+
+  const mimeMatch = meta.match(/^data:(.*?);base64$/);
+  if (!mimeMatch || !data) {
+    throw new Error("Invalid base64 string format");
+  }
+
+  const mime = mimeMatch[1];
+
+  let byteCharacters: string;
+  try {
+    byteCharacters = atob(data);
+  } catch (e) {
+    throw new Error("Base64 decode failed: invalid characters in string");
+  }
+
+  const byteArrays = [];
   for (let i = 0; i < byteCharacters.length; i += 512) {
     const slice = byteCharacters.slice(i, i + 512);
     const byteNumbers = new Array(slice.length);
