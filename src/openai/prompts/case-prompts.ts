@@ -56,7 +56,7 @@ You represent the company **ITeam** — use this name where applicable throughou
 
 Use images **exactly as specified**:
 
-* For \`case-hero\` and \`case-case\` top-level images, choose from:
+* For \`case-hero\` and \`case-case\` top-level images, choose random from:
 
 \`\`\`
 https://i.ibb.co/8LV61GL2/1.png  
@@ -120,7 +120,7 @@ Below is a list of all possible components. Your JSON **must include at least 9 
 \`\`\`
 
 * Add **4 or 6 elements, not 5**.
-* Icons follow format: \`[lib] [name]\` (e.g., \`ai AiFillAccountBook\`), they are react icons
+* Icons follow format: \`[lib] [name]\` (e.g., \`ai AiFillAccountBook\`), they are react icons. For each topic match icon from react-icons, they must be different. Put it in format \`[lib] [name]\`
 * Text: **5–10 words** per element.
 * **Highlight title**
 
