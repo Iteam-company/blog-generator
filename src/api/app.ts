@@ -10,31 +10,32 @@ import blogsRouter from "./routes/blogs.route";
 import authRouter from "./routes/auth.router";
 import cronRouter from "./routes/cron.router";
 import caseRouter from "./routes/case.router";
+import projectRouter from "./routes/project.router";
 
 const app = express();
 
 const corsWhitelist = process.env
-    .CORS_WHITELIST!.split(",")
-    .map((elem) => elem.trim());
+  .CORS_WHITELIST!.split(",")
+  .map((elem) => elem.trim());
 
 app.use(
-    cors({
-        origin: function (origin, callback) {
-            if (!origin || corsWhitelist.indexOf(origin) !== -1) {
-                callback(null, true);
-            } else {
-                callback(new Error("Not allowed by CORS"));
-            }
-        },
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allowedHeaders: [
-            "Content-Type",
-            "Authorization",
-            "X-Requested-With",
-            "Accept",
-        ],
-    })
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || corsWhitelist.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+    ],
+  })
 );
 
 app.use(express.json({ limit: "25mb" }));
@@ -46,9 +47,10 @@ app.use("/api/auth", authRouter);
 app.use("/api/blog", blogsRouter);
 app.use("/api/cron", cronRouter);
 app.use("/api/case", caseRouter);
+app.use("/api/project", projectRouter);
 
 app.all("*", (req, res, next) => {
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 // ERROR HANDLING: ALWAYS THE LAST IN MIDDLEWARE

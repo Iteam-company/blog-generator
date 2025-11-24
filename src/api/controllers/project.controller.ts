@@ -1,14 +1,14 @@
 import axios from "axios";
 import { Request, Response } from "express";
 import { OpenAI } from "openai";
-import { JSON_FORMATED_CASE } from "../../openai/prompts/case-prompts";
+import { JSON_FORMATED_PROJECT } from "../../openai/prompts/project-prompts";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-export class CaseController {
-  async generateCase(req: Request, res: Response): Promise<void> {
+export class ProjectController {
+  async generateProject(req: Request, res: Response): Promise<void> {
     const userPrompt = req.body.prompt;
 
     if (!userPrompt) {
@@ -19,7 +19,7 @@ export class CaseController {
     try {
       const systemMessage = {
         role: "system" as const,
-        content: JSON_FORMATED_CASE,
+        content: JSON_FORMATED_PROJECT,
       };
 
       const completion = await openai.chat.completions.create({
@@ -52,7 +52,7 @@ export class CaseController {
       }
 
       const strapiRes = await axios.post(
-        process.env.STRAPI_URL! + "/api/cases",
+        process.env.STRAPI_URL! + "/api/projects",
         { data: parsedJson },
         {
           headers: {
@@ -62,11 +62,11 @@ export class CaseController {
       );
 
       res.status(200).json({
-        message: "Case created and posted to Strapi successfully",
+        message: "Project created and posted to Strapi successfully",
         strapi: strapiRes.data,
       });
     } catch (err: any) {
-      console.error("generateCase error:", err);
+      console.error("generateProject error:", err);
 
       if (err.response) {
         res.status(err.response.status).json({
@@ -78,7 +78,7 @@ export class CaseController {
       }
 
       res.status(500).json({
-        error: "Something went wrong while generating or saving the case.",
+        error: "Something went wrong while generating or saving the Project.",
         details: err.message,
       });
 
