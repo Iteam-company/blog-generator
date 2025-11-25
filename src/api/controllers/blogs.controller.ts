@@ -57,6 +57,7 @@ export class BlogsController {
       }
 
       await saveJsonToFile("formated.md", content);
+
       const newPost = await postGenerator.parseAndPublish(
         content,
         images,

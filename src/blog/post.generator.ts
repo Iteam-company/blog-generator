@@ -10,10 +10,8 @@ import {
   MarkdownMetadata,
   StrapiArticleRequest,
   StrapiArticleResponce,
-  StrapiBlock,
   StrapiBlogsTitlesResponse,
   StrapiImage,
-  StrapiImageBlock,
   StrapiImageFormats,
 } from "./interfaces/strapi.json.interface";
 import { randomString, saveJsonToFile } from "../utils/utils";
@@ -30,7 +28,6 @@ export class PostGenerator {
   private openai: OpenaiService;
   private STRAPI_BLOG_URL = "/api/blogs";
   private STRAPI_MEDIA_URL = "/api/upload";
-  private STRAPI_ARTICLE_META_URL = "/api/article-generation";
   private UNSPLASH_SEARCH_URL = "/search/photos";
   private STRAPI_TOKEN: string;
   private strapiAxios: AxiosInstance;
@@ -69,20 +66,11 @@ export class PostGenerator {
     await saveJsonToFile("airesponse.md", markdownArticle);
 
     const converter = new MarkdownToStrapiConverter(markdownArticle, meta);
-    const { metadata, content } = converter.getData();
     const article = await converter.convert(images, this.strapiAxios);
 
     await saveJsonToFile("article.json", article);
 
-    const exisitigTitles = await this.getStrapiData();
-    await this.strapiAxios.put(this.STRAPI_ARTICLE_META_URL, {
-      data: {
-        exisitigTitles: [...exisitigTitles, { name: metadata.title }],
-      },
-    });
-
     const processedPost = await this.processImagesInBlogPost(article);
-
     await saveJsonToFile("processed.json", processedPost);
 
     const publishedPost = await this.publishThePost(processedPost);
