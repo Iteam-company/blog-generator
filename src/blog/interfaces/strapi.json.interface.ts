@@ -135,3 +135,13 @@ export interface StrapiArticleResponce {
 export interface StrapiArticleRequest {
   data: StrapiArticleData;
 }
+
+export interface StrapiBlogsTitlesResponse {
+  data?: {
+    id: number;
+    attributes: {
+      title: string;
+      [key: string]: any;
+    };
+  }[];
+}

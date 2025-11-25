@@ -11,6 +11,7 @@ import {
   StrapiArticleRequest,
   StrapiArticleResponce,
   StrapiBlock,
+  StrapiBlogsTitlesResponse,
   StrapiImage,
   StrapiImageBlock,
   StrapiImageFormats,
@@ -20,7 +21,10 @@ import {
   UnsplashImage,
   UnsplashSearchResponse,
 } from "./interfaces/unsplash.interface";
-import { IT_ARTICLE_DEFAULT } from "../openai/prompts/user-prompts";
+import {
+  CATEGORIES_DEFAULT,
+  IT_ARTICLE_DEFAULT,
+} from "../openai/prompts/user-prompts";
 
 export class PostGenerator {
   private openai: OpenaiService;
@@ -70,8 +74,7 @@ export class PostGenerator {
 
     await saveJsonToFile("article.json", article);
 
-    const articlesMeta = await this.getStrapiData();
-    const exisitigTitles = articlesMeta.attributes.exisitigTitles || [];
+    const exisitigTitles = await this.getStrapiData();
     await this.strapiAxios.put(this.STRAPI_ARTICLE_META_URL, {
       data: {
         exisitigTitles: [...exisitigTitles, { name: metadata.title }],
@@ -96,13 +99,9 @@ export class PostGenerator {
     }
 
     const strapiMeta = await this.getStrapiData();
-    const referenceCategories =
-      strapiMeta.attributes.exisitigTitles
-        .map((elem: any) => elem.name)
-        .join(", ") || "";
+    const referenceCategories = strapiMeta.join(", ") || "";
 
     userPrompt += `Here is existing titles, avoid this topics in the next post: ${referenceCategories}`;
-    console.log(userPrompt);
 
     const markdown = await this.openai.getAIResponse(userPrompt);
 
@@ -272,16 +271,19 @@ export class PostGenerator {
   }
 
   async getPrompt() {
-    const strapiMeta = await this.getStrapiData();
-    const referenceCategories = strapiMeta.attributes.referenceCategory
-      .map((elem: any) => elem.name)
-      .join(", ");
-    return IT_ARTICLE_DEFAULT.replace("---categories---", referenceCategories);
+    return IT_ARTICLE_DEFAULT.replace("---categories---", CATEGORIES_DEFAULT);
   }
 
   async getStrapiData() {
-    return await this.strapiAxios
-      .get(this.STRAPI_ARTICLE_META_URL + "?populate=deep")
-      .then((res) => res.data.data);
+    const strapiRes = await axios.get<StrapiBlogsTitlesResponse>(
+      process.env.STRAPI_URL! + "/api/blogs",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.STRAPI_TOKEN}`,
+        },
+      }
+    );
+
+    return (strapiRes.data.data ?? []).map((el) => el.attributes.title);
   }
 }
