@@ -21,7 +21,8 @@ export const JSON_FORMATED_PROJECT = `
     "imageLink": "",
     "heroText": "",
     "year": "",
-    "project_details": {}
+    "project_details": {},
+    "seo": {}
     }
 
     ### RULES FOR EACH FIELD:
@@ -248,6 +249,34 @@ export const JSON_FORMATED_PROJECT = `
     * Developer (default: "Unknown" unless specified)
 
     ---
+
+    # 📦 seo (STRICT STRUCTURE)
+
+    Your JSON **must** include a seo object:
+
+    json
+    {
+    "title": "",
+    "category": [],
+    "previewDescription": "",
+    "previewImage": ""
+    }
+
+
+    Follow rules below.
+
+    ---
+
+    ### RULES:
+
+    * title = "ITeam-Company | **PROJECT NAME IN ALL CAPS**"
+    * category: **Array of many short or long keywords seo tags, add as many as needed. Use service + industry + tech + problem keywords.**
+    * "previewDescription" — Describe the project, service, and tech used. (**25–40+ words** recommended)
+    * "previewImage" — use imageLink if present, otherwise leave as empty
+
+
+    ---
+
 
     # 📌 FINAL RULES
 

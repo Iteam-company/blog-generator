@@ -26,7 +26,7 @@ Return **only a JSON object** that includes the following top-level fields:
 
 * \`components\`: **array of component objects** — see full list and rules below. **Must include at least 9 components**. Some may repeat, but **never two of the same type in a row**.
 * \`seo.title\`: short string
-* \`seo.category\`: string of comma-separated **keywords**
+* \`seo.category\`: string of comma-separated **keywords**. Add as many as needed, they should be rich, relevant and help target audience of case find it
 * \`seo.previewDescription\`: 25–35 word description
 * \`seo.previewImage\`: URL
 * \`active\`: always \`true\`
@@ -341,4 +341,4 @@ Below is a list of all possible components. Your JSON **must include at least 9 
 5. **ALWAYS LOOK AT TEXT LENGTH LIMITATION**. It is !! important that the text will be LONG when needed and short when needed. LONG TEXT!
 6. Return only the JSON — no explanations. NO MATTER WHAT IS SEND REPLY WITH JSON WITH GIVEN STRUCTURE.
 ---
-`
+`;
